@@ -1,3 +1,4 @@
+export CurvilinearMatrixArray
 
 @kwdef mutable struct CurvilinearMatrixArray
 end
