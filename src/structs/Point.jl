@@ -24,7 +24,7 @@ mutable struct Point{T,A}
     Point{T,A}(r, θ, ϕ) where {T,A} = new(r, θ, ϕ)
 end
 
-Point() = Point(0.0, 0.0, 0.0)
+Point() = Point(0.0f0, 0.0f0, 0.0f0)
 
 function Point(r, θ, ϕ)
     r2, θ2, ϕ2 = promote(r, θ, ϕ)

@@ -70,7 +70,11 @@ function _read_location(fid, location, verbose)
 
         if N > 1
             if length(items) != N error("Size attribute does not match number of items") end
-            out = Vector{Any}(undef, N)
+
+            sym_name = join([uppercase(word[1]) * lowercase(word[2:end]) for word in split(class_name[5:end], "_")])
+
+            # Wtf is this cursed monstrosity?!?
+            out = Vector{eval(Meta.parse(sym_name))}(undef, N)
 
             for i in 1:N
                 out[i] = _read_location(fid, joinpath(location, items[i]), verbose)
@@ -83,6 +87,16 @@ function _read_location(fid, location, verbose)
             # Convert class_name from snake_case to CamelCase
             sym_name = join([uppercase(word[1]) * lowercase(word[2:end]) for word in split(class_name[5:end], "_")])
 
+            # We need to handle the split case of Wave and Aperture apodizations
+            if sym_name == "Apodization"
+                # Check is sequence is empty
+                if "sequence" in keys(fid[location])
+                    sym_name = "WaveApodization"
+                else
+                    sym_name = "ApertureApodization"
+                end
+            end
+
             # Ayo, why USTB use metaprogramming? I don't like this...
             uff_obj = eval(Meta.parse(sym_name * "()"))
 
@@ -92,9 +106,6 @@ function _read_location(fid, location, verbose)
                 prop_location = "$location/$prop"
                 if verbose println(prop_location) end
                 
-                prop_name = attrs(fid[prop_location])["name"] # isnt this just prop?
-                
-
                 # Here we can include some backwards compatibility stuff.
                 # Guess this is a todo for now.
                 # if flag_v10x && prop_name == "uff.probe"
@@ -104,7 +115,32 @@ function _read_location(fid, location, verbose)
                     # Since the header is a collection of multiple unpacked vales, we must dispatch into the header object
                     setfield!(uff_obj.header, Meta.parse(prop), _read_location(fid, prop_location, verbose)) 
                 else
-                    setfield!(uff_obj, Meta.parse(prop), _read_location(fid, prop_location, verbose))
+                    prop_symbol = Meta.parse(prop)
+
+                    # Property symbol translation for differences between Matlab and Julia implementation
+                    if isa(uff_obj, Point)
+                        prop_symbol = (prop_symbol == :azimuth)   ? :θ : 
+                                      (prop_symbol == :elevation) ? :ϕ : 
+                                      (prop_symbol == :distance)  ? :r : prop_symbol
+                    end
+
+                    prop_field_type = fieldtype(typeof(uff_obj), prop_symbol)
+                    data = _read_location(fid, prop_location, verbose)
+                    if prop_field_type <: Integer data = trunc(prop_field_type, data) end
+                    
+                    # Some whacky-hacky stuff to make sure that the data is correct type
+                    if prop_symbol in [ :f_number, :tilt, :maximum_aperture, :minimum_aperture ]
+                        data = vec(data)
+                    elseif isa(uff_obj, AbstractScan)
+                        data = [data]
+                    end
+
+                    setfield!(uff_obj, prop_symbol, data)
+                end
+                
+                # Upon finishing construction of wave objects, propagate probe from wave to apodization
+                if isa(uff_obj, Wave)
+                    uff_obj.apodization.probe = uff_obj.probe
                 end
             end
             return uff_obj
