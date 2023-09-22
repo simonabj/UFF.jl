@@ -1,9 +1,9 @@
 export Pulse
 
 @kwdef mutable struct Pulse
-    center_frequency::Float64 = 1.0      # center frequency [Hz]
-    fractional_bandwidth::Float64 = 0.0  # probe fractional bandwidth [unitless]
-    phase::Float64 = 0.0                 # initial phase [rad]
+    center_frequency::Float32 = 1.0      # center frequency [Hz]
+    fractional_bandwidth::Float32 = 0.0  # probe fractional bandwidth [unitless]
+    phase::Float32 = 0.0                 # initial phase [rad]
     waveform::Wavefront.WavefrontType = Wavefront.Plane # transmitted waveform (for example used for match filtering)
 end
 

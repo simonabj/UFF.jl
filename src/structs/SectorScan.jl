@@ -9,11 +9,11 @@ export SectorScan
 =#
 
 @kwdef mutable struct SectorScan <: AbstractScan
-    x::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
-    y::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
-    z::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
+    x::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
+    y::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
+    z::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
 
     origin::Vector{Point} = []
-    depth_axis::Vector{Float64} = []
-    azimuth_axis::Vector{Float64} = []
+    depth_axis::Vector{Float32} = []
+    azimuth_axis::Vector{Float32} = []
 end

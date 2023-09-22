@@ -18,13 +18,13 @@ export MatrixArray
 
 @kwdef mutable struct MatrixArray <: AbstractProbe
     origin::Point = Point()
-    geometry::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 7)
+    geometry::Array{Float32, 2} = Array{Float32, 2}(undef, 0, 7)
 
-    pitch_x::Float64 = 0.0
-    pitch_y::Float64 = 0.0
+    pitch_x::Float32 = 0.0
+    pitch_y::Float32 = 0.0
     N_x::Int64 = 0
     N_y::Int64 = 0
 
-    element_width::Float64 = 0.0
-    element_height::Float64 = 0.0
+    element_width::Float32 = 0.0
+    element_height::Float32 = 0.0
 end
