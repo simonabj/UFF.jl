@@ -1,6 +1,8 @@
 export BeamformedData
 
 @kwdef mutable struct BeamformedData
+    header::UFFHeader = UFFHeader()
+
     scan::Scan = LinearScan()
     data::Array{Float64, 4} = Array{Float64, 4}(undef, 0, 0, 0, 0)
 

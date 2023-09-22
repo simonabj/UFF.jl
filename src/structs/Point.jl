@@ -16,13 +16,15 @@ CoordinateTransformations.jl `Spherical` type. The UFF Point defines
 the azimuth θ as the angle from the point location to the YZ plane.
 The elevation ϕ is the angle from the point location to the XZ plane.
 """
-struct Point{T,A}
+mutable struct Point{T,A}
     r::T
     θ::A
     ϕ::A
 
     Point{T,A}(r, θ, ϕ) where {T,A} = new(r, θ, ϕ)
 end
+
+Point() = Point(0.0, 0.0, 0.0)
 
 function Point(r, θ, ϕ)
     r2, θ2, ϕ2 = promote(r, θ, ϕ)
@@ -91,18 +93,18 @@ function (::CartesianFromPoint)(x::Point)
     SVector(x.r * sθ * cϕ, x.r * sϕ, x.r * cθ * cϕ)
 end
 
-Base.propertynames(::Point, private::Bool=false) = union(fieldnames(Point), [:x,:y,:z,:xyz])
+Base.propertynames(::Point, private::Bool=false) = union(fieldnames(Point), [:x, :y, :z, :xyz])
 
 function Base.getproperty(p::Point, s::Symbol)
     if s in [:x, :y, :z, :xyz]
         p_xyz = CartesianFromPoint()(p)
 
         return s == :x ? p_xyz[1] :
-            s == :y ? p_xyz[2] :
-            s == :z ? p_xyz[3] :
-            p_xyz
+               s == :y ? p_xyz[2] :
+               s == :z ? p_xyz[3] :
+               p_xyz
     end
-    
+
     return getfield(p, s)
 end
 
@@ -110,7 +112,7 @@ function Base.setproperty!(p::Point, s::Symbol, value)
     if s in [:x, :y, :z]
         p_xyz = CartesianFromPoint()(p)
         # Set value to correct index
-        p_xyz[Dict( :x => 1, :y => 2, :z => 3)[s]] = value
+        p_xyz[Dict(:x => 1, :y => 2, :z => 3)[s]] = value
         new_p = PointFromCartesian()(p_xyz)
         p.r, p.θ, p.ϕ = new_p.r, new_p.θ, new_p.ϕ
     elseif s == :xyz

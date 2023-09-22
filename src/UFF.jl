@@ -3,6 +3,7 @@ module UFF
 version = v"1.2.0"
 
 # Base types
+include("structs/Header.jl")
 include("structs/Wavefront.jl")
 include("structs/Window.jl")
 include("structs/Point.jl")
@@ -28,9 +29,12 @@ include("structs/Phantom.jl")
 include("structs/ApertureApodization.jl")
 include("structs/Wave.jl")
 include("structs/WaveApodization.jl")
+include("structs/ChannelData.jl")
+include("structs/BeamformedData.jl")
 
-
-
+# Functions to read/write UFF files
+include("ReadObject.jl")
+include("WriteObject.jl")
 
 
 end
