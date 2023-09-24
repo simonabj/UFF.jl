@@ -2,6 +2,12 @@ module UFF
 
 version = v"1.2.0"
 
+# Julia version compatibility
+if VERSION < v"1.9"
+    import Base: @kwdef
+end
+
+
 # Base types
 include("structs/Header.jl")
 include("structs/Wavefront.jl")
