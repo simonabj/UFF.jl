@@ -30,7 +30,6 @@ See also PULSE, BEAM, PHANTOM, PROBE
 # TODO: Link up PHANTOM
 # TODO: Link up PROBE
 """
-version = v"1.2.0"
 @enum WindowType begin
     None = 0
     Boxcar = 1
