@@ -1,6 +1,6 @@
 export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan
 
-abstract type CompositeScan end
+
 
 @kwdef mutable struct Scan
     x::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -8,15 +8,8 @@ abstract type CompositeScan end
     z::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
 end
 
-#=
-    properties  (Dependent)
-        N_x_axis              % number of pixels in the x_axis
-        N_z_axis              % number of pixels in the z_axis
-        x_step                % the step size in m of the x samples
-        z_step                % the step size in m of the z samples
-        reference_distance    % distance used for the calculation of the phase term
-    end
-=#
+abstract type CompositeScan end
+Base.convert(::Type{Scan}, scan::CompositeScan) = scan.scan
 
 @kwdef mutable struct LinearScan <: CompositeScan
     scan::Scan = Scan()
@@ -24,15 +17,6 @@ end
     x_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
 end
-
-
-#=
-    properties  (Access = public)
-        azimuth_axis                % Vector containing the azimuth coordinates [rad]
-        depth_axis                  % Vector containing the distance coordinates [m]
-        origin                      % Vector of UFF.POINT objects
-    end
-=#
 
 @kwdef mutable struct SectorScan <: CompositeScan
     scan::Scan = Scan()
