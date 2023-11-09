@@ -2,7 +2,7 @@ export WaveApodization
 
 @kwdef mutable struct WaveApodization
     wave::Wave = Wave() 
-    focus::AbstractScan = Scan()
+    focus::Scan = Scan()
 
     window::Window.WindowType = Window.None
     f_number::Vector{Float32} = [1.0, 1.0]

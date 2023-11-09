@@ -15,10 +15,7 @@ include("structs/Window.jl")
 include("structs/Point.jl")
 
 # Scan
-include("structs/Scan.jl")
-include("structs/LinearScan.jl")
-include("structs/SectorScan.jl")
-include("structs/Linear3DScan.jl")
+include("structs/Scans.jl")
 
 # Probes
 include("structs/Probe.jl")
