@@ -24,6 +24,10 @@ end
     origin::Vector{Point} = []
     depth_axis::Vector{Float32} = []
     azimuth_axis::Vector{Float32} = []
+
+
+    rho::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
+    theta::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
 end
 
 @kwdef mutable struct LinearScanRotated <: CompositeScan
@@ -51,7 +55,7 @@ Base.propertynames(::LinearScan, private::Bool = false) = union(
     fieldnames(LinearScan), propertynames(Scan()) , [:N_x_axis, :N_z_axis, :x_step, :z_step, :reference_distance]
 )
 Base.propertynames(::SectorScan, private::Bool = false) = union(
-    fieldnames(SectorScan), [:Not_finished]
+    fieldnames(SectorScan), [:N_azimuth_axis, :N_depth_axis, :N_origins, :depth_step, :reference_distance]
 )
 Base.propertynames(::LinearScanRotated, private::Bool = false) = union(
     fieldnames(LinearScanRotated), [:Not_finished]
@@ -80,6 +84,8 @@ function Base.getproperty(scan::CompositeScan, s::Symbol)
         getproperty(scan.scan, s)
     elseif scan isa LinearScan
         get_LinearScan_dependents(scan, s)
+    elseif scan isa SectorScan
+        get_SectorScan_dependents(scan, s)
     elseif s == :Not_finished
         false
     else
@@ -110,6 +116,8 @@ function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
     
     if scan isa LinearScan
         update_LinearScan_pixels!(scan) 
+    elseif scan isa SectorScan
+        update_SectorScan_pixels!(scan)
     end
 end
 
@@ -131,6 +139,22 @@ function get_LinearScan_dependents(sca::LinearScan, s::Symbol)
     end
 end
 
+function get_SectorScan_dependents(sca::SectorScan, s::Symbol)
+    if s == :N_azimuth_axis
+        length(sca.azimuth_axis)
+    elseif s == :N_depth_axis
+        length(sca.depth_axis)
+    elseif s == :N_origins
+        length(sca.origin)
+    elseif s == :depth_step
+        sca.depth_axis[2] - sca.depth_axis[1]
+    elseif s == :reference_distance
+        sca.rho
+    else
+        error("No get property $s exists in SectorScan")
+    end
+end
+
 ## Concrete setters
 
 ## Concrete updaters
@@ -138,4 +162,10 @@ function update_LinearScan_pixels!(scan::LinearScan)
     scan.scan.x = (ones(length(scan.z_axis))' .* scan.x_axis)[:];
     scan.scan.y = zeros(length(scan.x_axis) * length(scan.z_axis))
     scan.scan.z = (ones(length(scan.x_axis)) .* scan.z_axis')[:];
+end
+
+function update_SectorScan_pixels!(scan::SectorScan)
+    assert(scan.N_origins == 1 || scan.N_origins == scan.N_azimuth_axis,
+        "Number of origins should be either one or equal to the number of scan lines")
+    
 end
