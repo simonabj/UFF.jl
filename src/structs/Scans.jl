@@ -32,10 +32,6 @@ end
     origin::Vector{Point} = [Point()]
     depth_axis::Vector{Float32} = []
     azimuth_axis::Vector{Float32} = []
-
-
-    rho::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
-    theta::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
 end
 
 """
@@ -75,7 +71,7 @@ Base.propertynames(::LinearScanRotated, private::Bool = false) = union(
 )
 # TODO: Add property names for Linear3DScan
 Base.propertynames(::Linear3DScan, private::Bool = false) = union(
-    fieldnames(Linear3DScan), [:Not_finished]
+    fieldnames(Linear3DScan), propertynames(Scan()), [:N_radial_axis, :N_axial_axis]
 )
 
 
@@ -102,6 +98,8 @@ function Base.getproperty(scan::CompositeScan, s::Symbol)
         get_SectorScan_dependents(scan, s)
     elseif scan isa LinearScanRotated
         get_LinearScanRotated_dependents(scan, s)
+    elseif scan isa Linear3DScan
+        get_Linear3DScan_dependents(scan, s)
     elseif s == :Not_finished
         false
     else
@@ -136,6 +134,8 @@ function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
         update_SectorScan_pixels!(scan)
     elseif scan isa LinearScanRotated
         update_LinearScanRotated_pixels!(scan)
+    elseif scan isa Linear3DScan
+        update_Linear3DScan_pixels!(scan)
     end
 end
 
@@ -167,7 +167,7 @@ function get_SectorScan_dependents(sca::SectorScan, s::Symbol)
     elseif s == :depth_step
         sca.depth_axis[2] - sca.depth_axis[1]
     elseif s == :reference_distance
-        sca.rho
+        sca.depth_axis
     else
         error("No get property $s exists in SectorScan")
     end
@@ -186,6 +186,16 @@ function get_LinearScanRotated_dependents(scan::LinearScanRotated, s::Symbol)
         sin(scan.rotation_angle)*scan.x + cos(scan.rotation_angle)*scan.z
     else
         error("No get property $s exists in LinearScanRotated")
+    end
+end
+
+function get_Linear3DScan_dependents(scan::Linear3DScan, s::Symbol)
+    if s == :N_radial_axis
+        length(scan.radial_axis)
+    elseif s == :N_axial_axis
+        length(scan.axial_axis)
+    else
+        error("No get property $s exists in Linear3DScan")
     end
 end
 
@@ -237,4 +247,13 @@ function update_LinearScanRotated_pixels!(scan::LinearScanRotated)
         scan.scan.y = zeros(prod(size(X)))
         scan.scan.z = Z[:]
     end
+end
+
+function update_Linear3DScan_pixels!(scan::Linear3DScan)
+    R = repeat(scan.radial_axis, inner = scan.N_axial_axis)
+    A = repeat(scan.axial_axis, outer = scan.N_radial_axis)
+
+    scan.x = R .* cos.(scan.roll)
+    scan.y = R .* sin.(scan.roll)
+    scan.z = A
 end
