@@ -1,9 +1,8 @@
 using ArgCheck
-
 export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan
 
-
-
+"""
+"""
 @kwdef mutable struct Scan
     x::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     y::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -65,11 +64,9 @@ Base.propertynames(::LinearScan, private::Bool = false) = union(
 Base.propertynames(::SectorScan, private::Bool = false) = union(
     fieldnames(SectorScan), propertynames(Scan()), [:N_azimuth_axis, :N_depth_axis, :N_origins, :depth_step, :reference_distance]
 )
-# TODO: Add property names for LinearScanRotated
 Base.propertynames(::LinearScanRotated, private::Bool = false) = union(
     fieldnames(LinearScanRotated), propertynames(Scan()), [:N_x_axis, :N_z_axis, :x_step, :z_step, :reference_distance]
 )
-# TODO: Add property names for Linear3DScan
 Base.propertynames(::Linear3DScan, private::Bool = false) = union(
     fieldnames(Linear3DScan), propertynames(Scan()), [:N_radial_axis, :N_axial_axis]
 )

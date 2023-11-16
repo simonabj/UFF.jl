@@ -2,8 +2,6 @@ using HDF5
 
 export read_object
 
-
-
 function _read_location(fid, location, verbose)
     data_name = nothing 
     class_name = nothing
