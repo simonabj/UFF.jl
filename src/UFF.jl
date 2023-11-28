@@ -7,6 +7,8 @@ if VERSION < v"1.9"
     import Base: @kwdef
 end
 
+# Allow Matrix to vector conversion
+Base.convert(::Type{Vector{T}}, m::Matrix{T}) where T = reduce(vcat, m)
 
 # Base types
 include("structs/Header.jl")
