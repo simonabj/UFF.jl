@@ -7,6 +7,8 @@ if VERSION < v"1.9"
     import Base: @kwdef
 end
 
+# Allow Matrix to vector conversion
+Base.convert(::Type{Vector{T}}, m::Matrix{T}) where T = reduce(vcat, m)
 
 # Base types
 include("structs/Header.jl")
@@ -15,10 +17,7 @@ include("structs/Window.jl")
 include("structs/Point.jl")
 
 # Scan
-include("structs/Scan.jl")
-include("structs/LinearScan.jl")
-include("structs/SectorScan.jl")
-include("structs/Linear3DScan.jl")
+include("structs/Scans.jl")
 
 # Probes
 include("structs/Probe.jl")
