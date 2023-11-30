@@ -20,11 +20,7 @@ include("structs/Point.jl")
 include("structs/Scans.jl")
 
 # Probes
-include("structs/Probe.jl")
-include("structs/LinearArray.jl")
-include("structs/CurvilinearArray.jl")
-include("structs/MatrixArray.jl")
-include("structs/CurvilinearMatrixArray.jl")
+include("structs/Probes.jl")
 
 # Compund Structs
 include("structs/Pulse.jl")

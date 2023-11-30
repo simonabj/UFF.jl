@@ -6,7 +6,7 @@ export Wave
     origin::Point = Point()
     apodization::ApertureApodization = ApertureApodization()
 
-    probe::AbstractProbe = Probe()
+    probe::Probe = Probe()
     event::Integer = -1
     delay::Float32 = 0.0
     sound_speed::Float32 = 1540.0

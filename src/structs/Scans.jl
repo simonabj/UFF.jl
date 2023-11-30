@@ -54,7 +54,10 @@ end
     roll::Float32 = 0.0
 end
 
-# Property names
+####################
+# Property names   #
+####################
+
 Base.propertynames(::Scan, private::Bool = false) = union(
     fieldnames(Scan), [:N_pixels, :xyz]
 )
@@ -71,7 +74,9 @@ Base.propertynames(::Linear3DScan, private::Bool = false) = union(
     fieldnames(Linear3DScan), propertynames(Scan()), [:N_radial_axis, :N_axial_axis]
 )
 
-
+####################
+# Getters          #
+####################
 function Base.getproperty(scan::Scan, s::Symbol)
     if s in fieldnames(typeof(scan))
         getfield(scan, s)
@@ -89,21 +94,79 @@ function Base.getproperty(scan::CompositeScan, s::Symbol)
         getfield(scan, s)
     elseif s in propertynames(Scan())
         getproperty(scan.scan, s)
-    elseif scan isa LinearScan
-        get_LinearScan_dependents(scan, s)
-    elseif scan isa SectorScan
-        get_SectorScan_dependents(scan, s)
-    elseif scan isa LinearScanRotated
-        get_LinearScanRotated_dependents(scan, s)
-    elseif scan isa Linear3DScan
-        get_Linear3DScan_dependents(scan, s)
-    elseif s == :Not_finished
-        false
     else
-        error("No get property $s exists in CompositeScan")
+        get(scan, s)
     end
 end
 
+####################
+# Concrete getters #
+####################
+function get(sca::LinearScan, s::Symbol)
+    if s == :N_x_axis
+        length(sca.x_axis)
+    elseif s == :N_z_axis
+        length(sca.z_axis)
+    elseif s == :x_step
+        sca.x_axis[2] - sca.x_axis[1]
+    elseif s == :z_step
+        sca.z_axis[2] - sca.z_axis[1]
+    elseif s == :reference_distance
+        sca.scan.z
+    else
+        error("No get property $s exists in LinearScan")
+    end
+end
+
+function get(sca::SectorScan, s::Symbol)
+    if s == :N_azimuth_axis
+        length(sca.azimuth_axis)
+    elseif s == :N_depth_axis
+        length(sca.depth_axis)
+    elseif s == :N_origins
+        length(sca.origin)
+    elseif s == :depth_step
+        sca.depth_axis[2] - sca.depth_axis[1]
+    elseif s == :reference_distance
+        sca.depth_axis
+    else
+        error("No get property $s exists in SectorScan")
+    end
+end
+
+function get(scan::LinearScanRotated, s::Symbol)
+    if s == :N_x_axis
+        length(scan.x_axis)
+    elseif s == :N_z_axis
+        length(scan.z_axis)
+    elseif s == :x_step
+        sca.x_axis[2] - sca.x_axis[1]
+    elseif s == :z_step
+        sca.z_axis[2] - sca.z_axis[1]
+    elseif s == :reference_distance
+        sin(scan.rotation_angle)*scan.x + cos(scan.rotation_angle)*scan.z
+    else
+        error("No get property $s exists in LinearScanRotated")
+    end
+end
+
+function get(scan::Linear3DScan, s::Symbol)
+    if s == :N_radial_axis
+        length(scan.radial_axis)
+    elseif s == :N_axial_axis
+        length(scan.axial_axis)
+    else
+        error("No get property $s exists in Linear3DScan")
+    end
+end
+
+function get(scan::CompositeScan, s::Symbol)
+    throw(ArgumentError("$(typeof(scan)) is not a valid scan type."))
+end
+
+####################
+# Setters          #
+####################
 function Base.setproperty!(scan::Scan, s::Symbol, value)
     if s in fieldnames(Scan)
         setfield!(scan, s, convert(fieldtype(Scan, s), value))
@@ -125,87 +188,20 @@ function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
         error("No set property $s exists in $(typeof(scan))")
     end
     
-    if scan isa LinearScan
-        update_LinearScan_pixels!(scan) 
-    elseif scan isa SectorScan
-        update_SectorScan_pixels!(scan)
-    elseif scan isa LinearScanRotated
-        update_LinearScanRotated_pixels!(scan)
-    elseif scan isa Linear3DScan
-        update_Linear3DScan_pixels!(scan)
-    end
+    update!(scan)
 end
 
+####################
+# Update functions #
+####################
 
-## Concrete getters
-function get_LinearScan_dependents(sca::LinearScan, s::Symbol)
-    if s == :N_x_axis
-        length(sca.x_axis)
-    elseif s == :N_z_axis
-        length(sca.z_axis)
-    elseif s == :x_step
-        sca.x_axis[2] - sca.x_axis[1]
-    elseif s == :z_step
-        sca.z_axis[2] - sca.z_axis[1]
-    elseif s == :reference_distance
-        sca.scan.z
-    else
-        error("No get property $s exists in LinearScan")
-    end
-end
-
-function get_SectorScan_dependents(sca::SectorScan, s::Symbol)
-    if s == :N_azimuth_axis
-        length(sca.azimuth_axis)
-    elseif s == :N_depth_axis
-        length(sca.depth_axis)
-    elseif s == :N_origins
-        length(sca.origin)
-    elseif s == :depth_step
-        sca.depth_axis[2] - sca.depth_axis[1]
-    elseif s == :reference_distance
-        sca.depth_axis
-    else
-        error("No get property $s exists in SectorScan")
-    end
-end
-
-function get_LinearScanRotated_dependents(scan::LinearScanRotated, s::Symbol)
-    if s == :N_x_axis
-        length(scan.x_axis)
-    elseif s == :N_z_axis
-        length(scan.z_axis)
-    elseif s == :x_step
-        sca.x_axis[2] - sca.x_axis[1]
-    elseif s == :z_step
-        sca.z_axis[2] - sca.z_axis[1]
-    elseif s == :reference_distance
-        sin(scan.rotation_angle)*scan.x + cos(scan.rotation_angle)*scan.z
-    else
-        error("No get property $s exists in LinearScanRotated")
-    end
-end
-
-function get_Linear3DScan_dependents(scan::Linear3DScan, s::Symbol)
-    if s == :N_radial_axis
-        length(scan.radial_axis)
-    elseif s == :N_axial_axis
-        length(scan.axial_axis)
-    else
-        error("No get property $s exists in Linear3DScan")
-    end
-end
-
-## Concrete setters
-
-## Concrete updaters
-function update_LinearScan_pixels!(scan::LinearScan)
+function update!(scan::LinearScan)
     scan.scan.x = (ones(length(scan.z_axis))' .* scan.x_axis)[:];
     scan.scan.y = zeros(length(scan.x_axis) * length(scan.z_axis))
     scan.scan.z = (ones(length(scan.x_axis)) .* scan.z_axis')[:];
 end
 
-function update_SectorScan_pixels!(scan::SectorScan)
+function update!(scan::SectorScan)
     @argcheck scan.N_origins == 1 || scan.N_origins == scan.N_azimuth_axis ArgumentError(
         "Number of origins should be either one or equal to the number of scan lines")
 
@@ -219,7 +215,7 @@ function update_SectorScan_pixels!(scan::SectorScan)
     scan.scan.y = zeros(N_pixels)
 end
 
-function update_LinearScanRotated_pixels!(scan::LinearScanRotated)
+function update!(scan::LinearScanRotated)
     # Mesh grid
     X = (ones(length(scan.z_axis))' .* scan.x_axis )[:];
     Z = (ones(length(scan.x_axis))  .* scan.z_axis')[:];
@@ -246,7 +242,7 @@ function update_LinearScanRotated_pixels!(scan::LinearScanRotated)
     end
 end
 
-function update_Linear3DScan_pixels!(scan::Linear3DScan)
+function update!(scan::Linear3DScan)
     R = repeat(scan.radial_axis, inner = scan.N_axial_axis)
     A = repeat(scan.axial_axis, outer = scan.N_radial_axis)
 

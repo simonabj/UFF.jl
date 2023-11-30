@@ -40,8 +40,6 @@ end
     - `verbose::Bool`: Print verbose output
 """
 function read_scan(fid, location, verbose)
-
-
     # We need to determine the type of scan, and then request
     # the appropriate data from the HDF5 file corresponding to that scan type.
     scan_type = match(r"uff\.(.*)", attrs(fid[location])["class"])[1]
@@ -88,6 +86,29 @@ function read_scan(fid, location, verbose)
     end
 
     return scan
+end
+
+function read_array(fid, location, verbose)
+
+    array_type = match(r"uff\.(.*)", attrs(fid[location])["class"])[1]
+
+    array = array_type == "linear_array" ? LinearArray() :
+            array_type == "curvilinear_array" ? CurvilinearArray() :
+            array_type == "matrix_array" ? MatrixArray() :
+            array_type == "curvilinear_matrix_array" ? CurvilinearMatrixArray() :
+            error("Array type $array_type not supported.")
+
+    # Read the location as an array
+    for key in keys(fid[location])
+        if verbose
+            println("$location/$key")
+        end
+        # setproperty! will run update!() on the inner probe, which we don't want.
+        UFF.set!(array, Symbol(key), false, read_data(fid["$location/$key"]))
+        
+    end
+
+    return array
 end
 
 function read_cell(fid, location)
@@ -144,6 +165,11 @@ function _read_location(fid, location, verbose)
     elseif endswith(class_name, "scan")
         println("Reading scan!")
         return read_scan(fid, location, verbose)
+
+    elseif endswith(class_name, "array")
+        println("Reading array!")
+        return read_array(fid, location, verbose)
+
     end
 
     class_name_matches = match(r"uff\.*", class_name)
@@ -152,8 +178,8 @@ function _read_location(fid, location, verbose)
 
         # Custom UFF type
         if verbose && class_name in ["uff.channel_data", "uff.beamformed_data", "uff.phantom"]
+            println("Reading $class_name")
         end
-        println("Reading $class_name")
 
         data_size = Int(prod(attrs(fid[location])["size"]))
         N = prod(data_size)
@@ -213,7 +239,7 @@ function _read_location(fid, location, verbose)
                     setfield!(uff_obj.header, Meta.parse(prop), _read_location(fid, prop_location, verbose))
                 else
                     # PS: This is way too deep. Should probably refactor this with guard clauses or something.
-                    
+
                     prop_symbol = Meta.parse(prop)
 
                     # Property symbol translation for differences between Matlab and Julia implementation
