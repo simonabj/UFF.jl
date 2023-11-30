@@ -140,10 +140,18 @@ function Base.setproperty!(probe::Probe, s::Symbol, v)
     end
 end
 
+# By default, we want to update the probe geometry when setting a property
 function Base.setproperty!(probe::CompositeProbe, s::Symbol, v)
+    set!(probe, s, true, v)
+end
+
+# We need this function to control whether or not to update the probe geometry.
+function set!(probe::CompositeProbe, s::Symbol, update::Bool, v)
     if s in fieldnames(typeof(probe))
         setfield!(probe, s, convert(fieldtype(typeof(probe), s), v))
-        update!(probe)
+        if update
+            update!(probe)
+        end
     elseif s in propertynames(Probe())
         setproperty!(probe.probe, s, v)
     else
