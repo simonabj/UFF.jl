@@ -74,3 +74,20 @@ object.
     - This is the same as the current approach, but without the
     Scan class.
     - This would decouple the UFF fileformat from the OOP paradigm.
+
+
+## UFF Reading
+- Reading UFF relies on the OOP paradigm
+- Constructing objects when reading uses metaprogramming
+    - This is a bad approach as it does not guarantee that the
+    data contained in the UFF file is valid.
+    - Adding features to the UFF fileformat is simple due to
+    the metaprogramming, but this is not a good approach.
+    - Changes between versions of the UFF fileformat would 
+    require special cases in the metaprogramming.
+    - The metaprogramming is not very readable and porting
+    this to other languages requires rewrites.
+
+### What could be done?
+- Use more generic functions to read the UFF fileformat
+- Do not rely on metaprogramming to interpret the data as classes
