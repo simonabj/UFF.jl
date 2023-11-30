@@ -8,22 +8,33 @@ import Statistics: mean
     geometry::Array{Float32,2} = Array{Float32,2}(undef, 0, 7)
 end
 
-"Return the number of elements in the Probe"
-Base.length(p::Probe) = size(p.geometry, 1)
-
-"Forwarded `Base.size` to `Probe.geometry`"
-Base.size(p::Probe, args...; kwargs...) = size(p.geometry, args...; kwargs...)
-
-"Forwarded `Base.getindex` to `Probe.geometry`"
-Base.getindex(p::Probe, args...; kwargs...) = getindex(p.geometry, args...; kwargs...)
-
-"Forwarded `Base.setindex!` to `Probe.geometry`"
-Base.setindex!(p::Probe, args...; kwargs...) = setindex!(p.geometry, args...; kwargs...)
-
+Base.propertynames(::Probe, private::Bool=false) = union(
+    fieldnames(Probe), collect(keys(_probe_symbol_map)), [:r, :distance]
+)
 
 ## Define composite scan types
 abstract type CompositeProbe end
 Base.convert(::Type{Probe}, scan::CompositeProbe) = probe.probe
+
+####################
+# Utility functions#
+####################
+
+"Return the number of elements in the Probe"
+Base.length(p::Probe) = size(p.geometry, 1)
+Base.length(p::CompositeProbe) = length(p.probe)
+
+"Forwarded `Base.size` to `Probe.geometry`"
+Base.size(p::Probe, args...; kwargs...) = size(p.geometry, args...; kwargs...)
+Base.size(p::CompositeProbe, args...; kwargs...) = size(p.probe, args...; kwargs...)
+
+"Forwarded `Base.getindex` to `Probe.geometry`"
+Base.getindex(p::Probe, args...; kwargs...) = getindex(p.geometry, args...; kwargs...)
+Base.getindex(p::CompositeProbe, args...; kwargs...) = getindex(p.probe, args...; kwargs...)
+
+"Forwarded `Base.setindex!` to `Probe.geometry`"
+Base.setindex!(p::Probe, args...; kwargs...) = setindex!(p.geometry, args...; kwargs...)
+Base.setindex!(p::CompositeProbe, args...; kwargs...) = setindex!(p.probe, args...; kwargs...)
 
 """
 """
@@ -76,9 +87,6 @@ end
 ####################
 
 
-Base.propertynames(::Probe, private::Bool=false) = union(
-    fieldnames(Probe), collect(keys(_probe_symbol_map)), [:r, :distance]
-)
 Base.propertynames(::LinearArray, private::Bool=false) = union(
     fieldnames(LinearArray), propertynames(Probe()), []
 )
