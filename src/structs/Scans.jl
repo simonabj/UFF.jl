@@ -54,7 +54,10 @@ end
     roll::Float32 = 0.0
 end
 
-# Property names
+####################
+# Property names   #
+####################
+
 Base.propertynames(::Scan, private::Bool = false) = union(
     fieldnames(Scan), [:N_pixels, :xyz]
 )
@@ -71,7 +74,9 @@ Base.propertynames(::Linear3DScan, private::Bool = false) = union(
     fieldnames(Linear3DScan), propertynames(Scan()), [:N_radial_axis, :N_axial_axis]
 )
 
-
+####################
+# Getters          #
+####################
 function Base.getproperty(scan::Scan, s::Symbol)
     if s in fieldnames(typeof(scan))
         getfield(scan, s)
@@ -92,56 +97,11 @@ function Base.getproperty(scan::CompositeScan, s::Symbol)
     else
         get(scan, s)
     end
-    # elseif scan isa LinearScan
-    #     get_LinearScan_dependents(scan, s)
-    # elseif scan isa SectorScan
-    #     get_SectorScan_dependents(scan, s)
-    # elseif scan isa LinearScanRotated
-    #     get_LinearScanRotated_dependents(scan, s)
-    # elseif scan isa Linear3DScan
-    #     get_Linear3DScan_dependents(scan, s)
-    # elseif s == :Not_finished
-    #     false
-    # else
-    #     error("No get property $s exists in CompositeScan")
-    # end
 end
 
-function Base.setproperty!(scan::Scan, s::Symbol, value)
-    if s in fieldnames(Scan)
-        setfield!(scan, s, convert(fieldtype(Scan, s), value))
-    elseif s == :xyz
-        scan.x = value[:, 1]
-        scan.y = value[:, 2]
-        scan.z = value[:, 3]
-    else
-        error("No set property $s exists in Scan")
-    end
-end
-
-function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
-    if s in fieldnames(typeof(scan))
-        setfield!(scan, s, convert(fieldtype(typeof(scan), s), value))
-    elseif s in propertynames(Scan)
-        setproperty!(scan.scan, s, value)
-    else
-        error("No set property $s exists in $(typeof(scan))")
-    end
-    
-    update!(scan)
-    # if scan isa LinearScan
-    #     update_LinearScan_pixels!(scan) 
-    # elseif scan isa SectorScan
-    #     update_SectorScan_pixels!(scan)
-    # elseif scan isa LinearScanRotated
-    #     update_LinearScanRotated_pixels!(scan)
-    # elseif scan isa Linear3DScan
-    #     update_Linear3DScan_pixels!(scan)
-    # end
-end
-
-
-## Concrete getters
+####################
+# Concrete getters #
+####################
 function get(sca::LinearScan, s::Symbol)
     if s == :N_x_axis
         length(sca.x_axis)
@@ -204,9 +164,37 @@ function get(scan::CompositeScan, s::Symbol)
     throw(ArgumentError("$(typeof(scan)) is not a valid scan type."))
 end
 
-## Concrete setters
+####################
+# Setters          #
+####################
+function Base.setproperty!(scan::Scan, s::Symbol, value)
+    if s in fieldnames(Scan)
+        setfield!(scan, s, convert(fieldtype(Scan, s), value))
+    elseif s == :xyz
+        scan.x = value[:, 1]
+        scan.y = value[:, 2]
+        scan.z = value[:, 3]
+    else
+        error("No set property $s exists in Scan")
+    end
+end
 
-## Concrete updaters
+function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
+    if s in fieldnames(typeof(scan))
+        setfield!(scan, s, convert(fieldtype(typeof(scan), s), value))
+    elseif s in propertynames(Scan)
+        setproperty!(scan.scan, s, value)
+    else
+        error("No set property $s exists in $(typeof(scan))")
+    end
+    
+    update!(scan)
+end
+
+####################
+# Update functions #
+####################
+
 function update!(scan::LinearScan)
     scan.scan.x = (ones(length(scan.z_axis))' .* scan.x_axis)[:];
     scan.scan.y = zeros(length(scan.x_axis) * length(scan.z_axis))
