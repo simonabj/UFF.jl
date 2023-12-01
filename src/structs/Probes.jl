@@ -14,7 +14,7 @@ Base.propertynames(::Probe, private::Bool=false) = union(
 
 ## Define composite scan types
 abstract type CompositeProbe end
-Base.convert(::Type{Probe}, scan::CompositeProbe) = probe.probe
+Base.convert(::Type{Probe}, probe::CompositeProbe) = probe.probe
 
 ####################
 # Utility functions#
