@@ -107,6 +107,7 @@ const _probe_symbol_map = Dict(
     :x => 1,
     :y => 2,
     :z => 3,
+    :xyz => 1:3,
     :θ => 4, :az => 4, :azimuth => 4,
     :ϕ => 5, :alt => 5, :elevation => 5,
     :w => 6, :width => 6,
