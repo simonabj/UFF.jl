@@ -1,5 +1,7 @@
 export Window
 
+import DSP: tukey
+
 module Window
 export WindowType, None, Boxcar, Hanning, Hamming, Tukey25, Tukey50, Tukey75, Tukey80, Scanline, Rectangular, Flat, Sta
 
@@ -45,5 +47,21 @@ end
 Rectangular = Boxcar
 Flat = Boxcar
 Sta = Tukey80
+
+boxcar(ratio) = Float32(ratio <= 0.5)
+hanning(ratio) = Float32(ratio<= 0.5)*(0.5 + 0.5cos(2π*ratio))
+hamming(ratio) = Float32(ratio<= 0.5)*(0.53836 + 0.46164cos(2π*ratio))
+tukey_my(ratio, α) = Float32((ratio<= 0.5(1-α))) + (ratio>0.5(1-α)) * (ratio<0.5) * 0.5(1+cos(2π/α*(ratio-α/2-0.5)))
+
+tukey_dsp(ratio, α) = tukey()
+
+function window_weights!(window::WindowType, θ_ratio, ϕ_ratio)
+    if window == None
+        return missing
+
+    elseif window == Boxcar
+        return nothing
+    end
+end
 
 end

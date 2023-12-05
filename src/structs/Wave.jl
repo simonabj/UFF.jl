@@ -7,7 +7,7 @@ export Wave
     wavefront::Wavefront.WavefrontType = Wavefront.Plane
     source::Point = Point()
     origin::Point = Point()
-    apodization::Union{ApertureApodization, Nothing} = nothing
+    apodization::ApertureApodization = ApertureApodization()
 
     probe::Probe = Probe()
     event::Integer = -1
@@ -52,7 +52,7 @@ function Base.getproperty(w::Wave, s::Symbol)
         end
     
     elseif s == :apodization_values
-        if isnothing(w.apodization)
+        if isempty(w.apodization.apodization_vector)
             return ones(Float32, length(w.probe))
         else
             return w.apodization.apodization_vector
