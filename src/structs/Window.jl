@@ -48,19 +48,36 @@ Rectangular = Boxcar
 Flat = Boxcar
 Sta = Tukey80
 
-boxcar(ratio) = Float32(ratio <= 0.5)
-hanning(ratio) = Float32(ratio<= 0.5)*(0.5 + 0.5cos(2π*ratio))
-hamming(ratio) = Float32(ratio<= 0.5)*(0.53836 + 0.46164cos(2π*ratio))
-tukey_my(ratio, α) = Float32((ratio<= 0.5(1-α))) + (ratio>0.5(1-α)) * (ratio<0.5) * 0.5(1+cos(2π/α*(ratio-α/2-0.5)))
+boxcar(ratio)   = @. Float32(ratio <= 0.5)
+hanning(ratio)  = @. Float32(ratio <= 0.5) * (0.5 + 0.5cos(2π * ratio))
+hamming(ratio)  = @. Float32(ratio <= 0.5) * (0.53836 + 0.46164cos(2π * ratio))
+tukey(ratio, α) = @. Float32((ratio <= 0.5(1 - α))) + (ratio > 0.5(1 - α)) * (ratio < 0.5) * 0.5(1 + cos(2π / α * (ratio - α / 2 - 0.5)))
 
-tukey_dsp(ratio, α) = tukey()
 
-function window_weights!(window::WindowType, θ_ratio, ϕ_ratio)
-    if window == None
-        return missing
+function window_weights(window::WindowType, θ_ratio, ϕ_ratio)
+    if window == Boxcar
+        return boxcar(θ_ratio) .* boxcar(ϕ_ratio)
 
-    elseif window == Boxcar
-        return nothing
+    elseif window == Hanning
+        return hanning(θ_ratio) .* hanning(ϕ_ratio)
+    
+    elseif window == Hamming
+        return hamming(θ_ratio) .* hamming(ϕ_ratio)
+    
+    elseif window == Tukey25
+        return tukey(θ_ratio, 0.25) .* tukey(ϕ_ratio, 0.25)
+
+    elseif window == Tukey50
+        return tukey(θ_ratio, 0.5) .* tukey(ϕ_ratio, 0.5)   
+
+    elseif window == Tukey75
+        return tukey(θ_ratio, 0.75) .* tukey(ϕ_ratio, 0.75)
+
+    elseif window == Tukey80
+        return tukey(θ_ratio, 0.8) .* tukey(ϕ_ratio, 0.8)
+
+    else
+        error("Window type not supported")
     end
 end
 
