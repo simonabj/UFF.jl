@@ -12,6 +12,10 @@ end
 abstract type CompositeScan end
 Base.convert(::Type{Scan}, scan::CompositeScan) = scan.scan
 
+Base.isempty(scan::Scan) = mapreduce(isempty, &, [scan.x, scan.y, scan.z])
+Base.isempty(scan::CompositeScan) = isempty(scan.scan)
+
+
 ## Define composite scan types
 
 """
