@@ -10,14 +10,14 @@ end
     origin::Point = Point()
 
     window::Window.WindowType = Window.None
-    f_number::Tuple{Float32} = (1.0, 1.0)
+    f_number::Tuple{Float32, Float32} = (1.0f0, 1.0f0)
 
     MLA::Integer = 1
     MLA_overlap::Integer = 0
 
-    tilt::Tuple{Float32} = (0.0, 0.0)
-    minimum_aperture::Tuple{Float32} = (1e-3, 1e-3)
-    maximum_aperture::Vector{Float32} = (10, 10)
+    tilt::Tuple{Float32, Float32} = (0.0, 0.0)
+    minimum_aperture::Tuple{Float32, Float32} = (1e-3, 1e-3)
+    maximum_aperture::Tuple{Float32, Float32} = (10, 10)
 
     apodization_vector::Vector{Float32} = []
 end
@@ -71,8 +71,34 @@ function compute(apod::ApertureApodization)
         dist = mapslices(norm,apod.probe.xyz .- apod.origin.xyz', dims=2)
         return ApodizationData(ones(Float32, apod.focus.N_pixels, 1) * (dist ≈ minimum(dist)))
     else
-        # TODO: finish implementation. line 308 in +uff/apodization.m
+        
     end
 
     return ApodizationData(ones(Float32, apod.focus.N_pixels, apod.probe.N_elements));
+end
+
+function incidence(apod::ApertureApodization)
+    # Element locations
+    # Each column is a single element
+    x = ones(apod.focus.N_pixels, 1) * apod.probe.x'
+    y = ones(apod.focus.N_pixels, 1) * apod.probe.y'
+    z = ones(apod.focus.N_pixels, 1) * apod.probe.z'
+
+    # If we have a curvilinear array
+    if apod.probe isa CurvilinearArray || apod.probe isa CurvilinearMatrixArray
+        # The probe class already includes the quantities θ and ϕ which define the
+        # element orientation.
+        element_azimuth = atan2(x - apod.origin.x, z - apod.origin.z)
+
+        pixel_azimuth = atan2(apod.focus.x - apod.origin.x, apod.focus.z - apod.origin.z)
+        pixel_distance = hypot.(apod.focus.x - apod.origin.x, apod.focus.z - apod.origin.z)
+
+        x_dist = apod.origin.z .* (pixel_azimuth .- element_azimuth)
+        y_dist = apod.origin.y - y
+        z_dist = pixel_distance .* ones(1, apod.probe.N_elements)-a.origin.z
+        
+        println(x_dist)
+        println(y_dist)
+        println(z_dist)
+    end
 end
