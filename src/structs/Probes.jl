@@ -1,9 +1,20 @@
-export Probe, LinearArray, CurvilinearArray, MatrixArray, CurvilinearMatrixArray
+export Probe, LinearArray, CurvilinearArray, MatrixArray, CurvilinearMatrixArray, ProbeType
 import Statistics: mean
+
+module ProbeType
+@enum T begin
+    Basic = 1
+    LinearArray = 2
+    CurvilinearArray = 3
+    MatrixArray = 4
+    CurvilinearMatrixArray = 5
+end
+end
 
 """
 """
 @kwdef mutable struct Probe
+    type::ProbeType.T = ProbeType.Basic
     origin::Point = Point()
     geometry::Array{Float32,2} = Array{Float32,2}(undef, 0, 7)
 end
@@ -39,7 +50,7 @@ Base.setindex!(p::CompositeProbe, args...; kwargs...) = setindex!(p.probe, args.
 """
 """
 @kwdef mutable struct LinearArray <: CompositeProbe
-    probe::Probe = Probe()
+    probe::Probe = Probe(; type=ProbeType.LinearArray)
 
     N::Int64 = 0
     pitch::Float32 = 1.0
@@ -50,7 +61,7 @@ end
 """
 """
 @kwdef mutable struct CurvilinearArray <: CompositeProbe
-    probe::Probe = Probe()
+    probe::Probe = Probe(; type=ProbeType.CurvilinearArray)
 
     N::Int = 0
     pitch::Float32 = 1.0
@@ -62,7 +73,7 @@ end
 """
 """
 @kwdef mutable struct MatrixArray <: CompositeProbe
-    probe::Probe = Probe()
+    probe::Probe = Probe(; type=ProbeType.MatrixArray)
 
     pitch_x::Float32 = 1.0
     pitch_y::Float32 = 1.0
@@ -76,7 +87,7 @@ end
 """
 """
 @kwdef mutable struct CurvilinearMatrixArray <: CompositeProbe
-    probe::Probe = Probe()
+    probe::Probe = Probe(; type=ProbeType.CurvilinearMatrixArray)
 
     radius_x::Float32 = 1.0
 end

@@ -1,9 +1,20 @@
 using ArgCheck
-export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan
+export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan, ScanType
+
+module ScanType
+@enum T begin
+    Basic = 1
+    LinearScan = 2
+    SectorScan = 3
+    LinearScanRotated = 4
+    Linear3DScan = 5
+end
+end
 
 """
 """
 @kwdef mutable struct Scan
+    type::ScanType.T = ScanType.Basic
     x::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     y::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -21,7 +32,7 @@ Base.isempty(scan::CompositeScan) = isempty(scan.scan)
 """
 """
 @kwdef mutable struct LinearScan <: CompositeScan
-    scan::Scan = Scan()
+    scan::Scan = Scan(; type=ScanType.LinearScan)
 
     x_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -30,7 +41,7 @@ end
 """
 """
 @kwdef mutable struct SectorScan <: CompositeScan
-    scan::Scan = Scan()
+    scan::Scan = Scan(; type=ScanType.SectorScan)
 
     origin::Vector{Point} = [Point()]
     depth_axis::Vector{Float32} = []
@@ -40,7 +51,7 @@ end
 """
 """
 @kwdef mutable struct LinearScanRotated <: CompositeScan
-    scan::Scan = Scan()
+    scan::Scan = Scan(; type=ScanType.LinearScanRotated)
 
     x_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -51,7 +62,7 @@ end
 """
 """
 @kwdef mutable struct Linear3DScan <: CompositeScan
-    scan::Scan = Scan() 
+    scan::Scan = Scan(; type=ScanType.Linear3DScan) 
 
     radial_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     axial_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
