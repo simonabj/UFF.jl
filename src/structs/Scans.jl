@@ -211,9 +211,9 @@ end
 ####################
 
 function update!(scan::LinearScan)
-    scan.scan.x = (ones(length(scan.z_axis))' .* scan.x_axis)[:];
+    scan.scan.x = (ones(length(scan.z_axis)) .* scan.x_axis')[:];
     scan.scan.y = zeros(length(scan.x_axis) * length(scan.z_axis))
-    scan.scan.z = (ones(length(scan.x_axis)) .* scan.z_axis')[:];
+    scan.scan.z = (ones(length(scan.x_axis))' .* scan.z_axis)[:];
 end
 
 function update!(scan::SectorScan)
