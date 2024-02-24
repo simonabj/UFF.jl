@@ -1,10 +1,6 @@
 import Rotations: RotX, RotY
 
-export ApertureApodization
-
-struct ApodizationData
-    data::Matrix{Float32}
-end
+export ApertureApodization, compute
 
 @kwdef mutable struct ApertureApodization
     probe::Probe = Probe()
@@ -21,7 +17,7 @@ end
     minimum_aperture::Vector{Float32} = [1e-3, 1e-3]
     maximum_aperture::Vector{Float32} = [10, 10]
 
-    apodization_vector::Vector{Float32} = []
+    apodization_vector::Matrix{Float32} = Matrix{Float32}(undef, 0, 0)
 end
 
 
@@ -50,8 +46,16 @@ function Base.setproperty!(a::ApertureApodization, s::Symbol, v)
 end
 
 
-# Calculate apodization data
+# Calculate apodization values
+"""
+    compute(apo::ApertureApodization)
+    
+Calculate the apodization values for a given aperture apodization.
 
+The apodization values are calculated based on the type of apodization.
+For scanline/STA apodization, the apodization values are calculated based on the distance
+
+"""
 function compute(apod::ApertureApodization)
     if isempty(apod.focus)
         apod.focus = Scan([0], [0], [0])
@@ -59,26 +63,32 @@ function compute(apod::ApertureApodization)
 
     # Check if the apodization vector is set. If it is, we use it directly and return
     if !isempty(apod.apodization_vector)
-        if length(apod.apodization_vector) == apod.probe.N_elements
-            return ApodizationData(ones(Float32, apod.focus.N_pixels, 1) * apod.apodization_vector')
+        if length(apod.apodization_vector) == apod.probe.N
+            return ones(Float32, apod.focus.N_pixels, 1) * apod.apodization_vector'
         else
-            return ApodizationData(reshape(apod.apodization_vector, :, 1))
+            return reshape(apod.apodization_vector, :, 1)
         end
     end
 
     # If no window is set, we return a simple ones matrix
     if apod.window == Window.None
-        return ApodizationData(ones(Float32, apod.focus.N_pixels, apod.probe.N_elements))
+        return ones(Float32, apod.focus.N_pixels, length(apod.probe))
 
     # STA apodization (Use the closest element to user set origin)
     elseif apod.window == Window.Sta
         dist = mapslices(norm, apod.probe.xyz .- apod.origin.xyz', dims=2)
-        return ApodizationData(ones(Float32, apod.focus.N_pixels, 1) * (dist ≈ minimum(dist)))
+        return ones(Float32, apod.focus.N_pixels, 1) * (dist ≈ minimum(dist))
     else
+        tan_theta, tan_phi = incidence(apod)
 
+        ratio_theta = abs.(apod.f_number[1] * tan_theta)
+        ratio_phi = abs.(apod.f_number[2] * tan_phi)
+        
+        return apod.window(ratio_theta, ratio_phi)
+        
     end
 
-    return ApodizationData(ones(Float32, apod.focus.N_pixels, apod.probe.N_elements))
+    return ones(Float32, apod.focus.N_pixels, apod.probe.N_elements)
 end
 
 function incidence(apod::ApertureApodization)
@@ -89,7 +99,6 @@ function incidence(apod::ApertureApodization)
     y = ones(Float32, apod.focus.N_pixels, 1) * apod.probe.y'
     z = ones(Float32, apod.focus.N_pixels, 1) * apod.probe.z'
 
-    println("Checking probe type...")
     # If we have a curvilinear array
     if apod.probe.type == ProbeType.CurvilinearArray || apod.probe.type == ProbeType.CurvilinearMatrixArray 
         # The probe class already includes the quantities θ and ϕ which define the
@@ -119,36 +128,20 @@ function incidence(apod::ApertureApodization)
         # If not, we have a flat probe and a linear scan. In this case
         # the aperture is centered at each beam's x coordinate
 
-        println("It was a linear scan and probe...")
         x_dist = apod.focus.x .- x
         y_dist = apod.focus.y .- y
         z_dist = apod.focus.z .- z
-        # display(size(z))
-        # display(size(apod.focus.z))
-        # display(z_dist[1:4, 1:3])
-        # display(reshape(apod.focus.z, 256,256)[1:4, 1:3])
-        # display(size(z_dist))
-        # display(z)
-        # display(z_dist)
-        println("We done with geometry specific operations")
     end
 
-    println("Compansating for tilt...")
     # negative rotY because of the way spherical coordinates are defined. See Point.jl
     rotation_matrix = RotY(-apod.tilt[1]) * RotX(apod.tilt[2])
 
-
-    println("Performing rotation...")
     x_dist, y_dist, z_dist = eachslice(rotation_matrix * [x_dist[:] y_dist[:] z_dist[:]]', dims=1)
 
     x_dist = reshape(x_dist, size(x))
     y_dist = reshape(y_dist, size(y))
     z_dist = reshape(z_dist, size(z))
 
-    display(x_dist)    
-    display(z_dist)
-
-    println("Compansating for f_number and applying aperture constraints...")
     zx_dist = zy_dist = z_dist
 
     mask_minimum_x = abs.(z_dist) .<= apod.minimum_aperture[1] * apod.f_number[1]
@@ -156,7 +149,6 @@ function incidence(apod::ApertureApodization)
 
     mask_maximum_x = abs.(z_dist) .>= apod.maximum_aperture[1] * apod.f_number[1]
     mask_maximum_y = abs.(z_dist) .>= apod.maximum_aperture[2] * apod.f_number[2]
-
 
     ## Apply min aperture
     zx_dist[mask_minimum_x] .= 
@@ -170,21 +162,9 @@ function incidence(apod::ApertureApodization)
     zy_dist[mask_maximum_y] .=
         sign.(zy_dist[mask_maximum_y]) * apod.maximum_aperture[2] * apod.f_number[2]
 
-
-    println("\n\n\n\n\nDone with calcs\n\n\n\n\n")
-    display(x_dist)
-    display(y_dist)
-    display(z_dist)
-
-    display(zx_dist)
-    display(zy_dist)
-
-
-    println("Calculating tangents and distance...")
     # Calculate tangents and distance
     tan_theta = x_dist ./ zx_dist
     tan_phi = y_dist ./ zy_dist
-    distance = z_dist
 
-    return tan_theta, tan_phi, distance
+    return tan_theta, tan_phi
 end
