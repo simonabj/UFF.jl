@@ -42,11 +42,12 @@ See also PULSE, BEAM, PHANTOM, PROBE
     Tukey75 = 6
     Tukey80 = 7
     Scanline = 8
+    Sta = 9
 end
 
-Rectangular = Boxcar
-Flat = Boxcar
-Sta = Tukey80
+# Common aliases
+Rectangular = Flat = Boxcar
+# Sta = Scanline
 
 boxcar_weight(ratio)   = @. Float32(ratio <= 0.5)
 hanning_weight(ratio)  = @. Float32(ratio <= 0.5) * (0.5 + 0.5cos(2π * ratio))
