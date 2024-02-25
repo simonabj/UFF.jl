@@ -44,33 +44,34 @@ function read_scan(fid, location; verbose = false)
     # the appropriate data from the HDF5 file corresponding to that scan type.
     scan_type = match(r"uff\.(.*)", attrs(fid[location])["class"])[1]
 
+    
     base_scan = Scan()
+    
     base_scan.x = read_col_vector(fid["$location/x"])
     base_scan.y = read_col_vector(fid["$location/y"])
     base_scan.z = read_col_vector(fid["$location/z"])
     
-
     if scan_type == "scan"
         return base_scan
     end
 
-    full_scan = scan_type == "linear_scan" ? LinearScan() :
+    scan = scan_type == "linear_scan" ? LinearScan() :
            scan_type == "sector_scan" ? SectorScan() :
            scan_type == "curvilinear_scan" ? CurvilinearScan() :
            scan_type == "linear_scan_rotated" ? LinearScanRotated() :
            scan_type == "linear_3d_scan" ? Linear3DScan() :
            error("Scan type $scan_type not supported.")
 
-    setfield!(full_scan, :scan, base_scan)
+    setfield!(scan, :scan, base_scan)
 
-    for field_name in fieldnames(typeof(full_scan))
+    for field_name in fieldnames(typeof(scan))
         if field_name == :scan
             continue
         end # Skip scan field
 
         # setproperty! will try to convert the data to the correct type
         try
-            setfield!(full_scan, field_name, convert(fieldtype(typeof(full_scan), field_name), read_data(fid["$location/$field_name"])))
+            setfield!(scan, field_name, convert(fieldtype(typeof(scan), field_name), read_data(fid["$location/$field_name"])))
         catch e
             # This is a special case for sector scans in v1.2.0
             sector_scan_fix = field_name == :origin && scan_type == "sector_scan" && e isa KeyError
@@ -82,11 +83,11 @@ function read_scan(fid, location; verbose = false)
             if apex isa Point
                 apex = [apex]
             end
-            setfield!(full_scan, :origin, apex)
+            setfield!(scan, :origin, apex)
         end
     end
 
-    return full_scan
+    return scan
 end
 
 function read_array(fid, location; verbose = false)

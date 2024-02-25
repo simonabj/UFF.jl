@@ -14,7 +14,6 @@ end
 """
 """
 @kwdef mutable struct Scan
-    type::ScanType.T = ScanType.Basic
     x::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     y::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -32,7 +31,7 @@ Base.isempty(scan::CompositeScan) = isempty(scan.scan)
 """
 """
 @kwdef mutable struct LinearScan <: CompositeScan
-    scan::Scan = Scan(; type=ScanType.LinearScan)
+    scan::Scan = Scan()
 
     x_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -41,7 +40,7 @@ end
 """
 """
 @kwdef mutable struct SectorScan <: CompositeScan
-    scan::Scan = Scan(; type=ScanType.SectorScan)
+    scan::Scan = Scan()
 
     origin::Vector{Point} = [Point()]
     depth_axis::Vector{Float32} = []
@@ -51,7 +50,7 @@ end
 """
 """
 @kwdef mutable struct LinearScanRotated <: CompositeScan
-    scan::Scan = Scan(; type=ScanType.LinearScanRotated)
+    scan::Scan = Scan()
 
     x_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     z_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -62,7 +61,7 @@ end
 """
 """
 @kwdef mutable struct Linear3DScan <: CompositeScan
-    scan::Scan = Scan(; type=ScanType.Linear3DScan) 
+    scan::Scan = Scan() 
 
     radial_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
     axial_axis::Array{Float32, 1} = Array{Float32, 1}(undef, 0)
@@ -197,7 +196,7 @@ end
 function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
     if s in fieldnames(typeof(scan))
         setfield!(scan, s, convert(fieldtype(typeof(scan), s), value))
-    elseif s in propertynames(Scan)
+    elseif s in propertynames(Scan())
         setproperty!(scan.scan, s, value)
     else
         error("No set property $s exists in $(typeof(scan))")
