@@ -3,8 +3,8 @@ import Rotations: RotX, RotY
 export ApertureApodization, compute
 
 @kwdef mutable struct ApertureApodization
-    probe::Probe = Probe()
-    focus::Scan = Scan()
+    probe::Union{Probe, CompositeProbe} = Probe()
+    focus::Union{Scan, CompositeScan} = Scan()
     origin::Point = Point()
 
     window::Window.WindowType = Window.None
@@ -76,8 +76,8 @@ function compute(apod::ApertureApodization)
 
     # STA apodization (Use the closest element to user set origin)
     elseif apod.window == Window.Sta
-        dist = mapslices(norm, apod.probe.xyz .- apod.origin.xyz', dims=2)
-        return ones(Float32, apod.focus.N_pixels, 1) * (dist ≈ minimum(dist))
+        dist = map(norm, eachrow(apod.probe.xyz .- apod.origin.xyz'))
+        return ones(Float32, apod.focus.N_pixels, 1) * (dist .≈ minimum(dist))'
     else
         tan_theta, tan_phi = incidence(apod)
 
@@ -100,7 +100,7 @@ function incidence(apod::ApertureApodization)
     z = ones(Float32, apod.focus.N_pixels, 1) * apod.probe.z'
 
     # If we have a curvilinear array
-    if apod.probe.type == ProbeType.CurvilinearArray || apod.probe.type == ProbeType.CurvilinearMatrixArray 
+    if apod.probe isa CurvilinearArray || apod.probe isa CurvilinearMatrixArray 
         # The probe class already includes the quantities θ and ϕ which define the
         # element orientation.
         element_azimuth = atan2(x .- apod.origin.x, z .- apod.origin.z)
@@ -112,7 +112,7 @@ function incidence(apod::ApertureApodization)
         y_dist = apod.origin.y - y
         z_dist = pixel_distance .* ones(1, apod.probe.N_elements) - a.origin.z
 
-    elseif apod.focus.type == ScanType.SectorScan
+    elseif apod.focus isa SectorScan
     
         pixel_distance = hypot.(
             apod.focus.x .- apod.origin.x,
