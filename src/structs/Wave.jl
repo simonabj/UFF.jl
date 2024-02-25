@@ -4,12 +4,13 @@ import ArgCheck: @argcheck
 export Wave
 
 @kwdef mutable struct Wave
-    wavefront::Wavefront.WavefrontType = Wavefront.Plane
+    wavefront::Wavefront.WavefrontType = Wavefront.Spherical
     source::Point = Point()
     origin::Point = Point()
-    apodization::ApertureApodization = ApertureApodization()
 
-    probe::Probe = Probe()
+    apodization::ApertureApodization = ApertureApodization()
+    
+    probe::Union{Probe, CompositeProbe} = Probe()
     event::Integer = -1
     delay::Float32 = 0.0
     sound_speed::Float32 = 1540.0
