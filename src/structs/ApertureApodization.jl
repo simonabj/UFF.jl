@@ -122,7 +122,7 @@ function incidence(apod::ApertureApodization)
 
         x_dist = x .- apod.origin.x
         y_dist = y .- apod.origin.y
-        z_dist = pixel_distance .* ones(1, apod.probe.N_elements)
+        z_dist = pixel_distance .* ones(1, apod.probe.N)
 
     else
         # If not, we have a flat probe and a linear scan. In this case

@@ -42,7 +42,7 @@ end
 @kwdef mutable struct SectorScan <: CompositeScan
     scan::Scan = Scan()
 
-    origin::Vector{Point} = [Point()]
+    origin::Vector{Point{Float32, Float32}} = []
     depth_axis::Vector{Float32} = []
     azimuth_axis::Vector{Float32} = []
 end

@@ -75,10 +75,13 @@ function read_scan(fid, location; verbose = false)
         catch e
             # This is a special case for sector scans in v1.2.0
             sector_scan_fix = field_name == :origin && scan_type == "sector_scan" && e isa KeyError
+
+            # There was another error than the origin<->apex error
             if !sector_scan_fix
                 rethrow(e)
             end
 
+            # Fix for apex -> origin
             apex = _read_location(fid, "$location/apex"; verbose)
             if apex isa Point
                 apex = [apex]
