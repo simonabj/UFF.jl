@@ -1,5 +1,15 @@
 using ArgCheck
-export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan
+export CompositeScan, Scan, LinearScan, SectorScan, LinearScanRotated, Linear3DScan, ScanType
+
+module ScanType
+@enum T begin
+    Basic = 1
+    LinearScan = 2
+    SectorScan = 3
+    LinearScanRotated = 4
+    Linear3DScan = 5
+end
+end
 
 """
 """
@@ -11,6 +21,10 @@ end
 
 abstract type CompositeScan end
 Base.convert(::Type{Scan}, scan::CompositeScan) = scan.scan
+
+Base.isempty(scan::Scan) = mapreduce(isempty, &, [scan.x, scan.y, scan.z])
+Base.isempty(scan::CompositeScan) = isempty(scan.scan)
+
 
 ## Define composite scan types
 
@@ -28,7 +42,7 @@ end
 @kwdef mutable struct SectorScan <: CompositeScan
     scan::Scan = Scan()
 
-    origin::Vector{Point} = [Point()]
+    origin::Vector{Point{Float32, Float32}} = []
     depth_axis::Vector{Float32} = []
     azimuth_axis::Vector{Float32} = []
 end
@@ -182,7 +196,7 @@ end
 function Base.setproperty!(scan::CompositeScan, s::Symbol, value)
     if s in fieldnames(typeof(scan))
         setfield!(scan, s, convert(fieldtype(typeof(scan), s), value))
-    elseif s in propertynames(Scan)
+    elseif s in propertynames(Scan())
         setproperty!(scan.scan, s, value)
     else
         error("No set property $s exists in $(typeof(scan))")
@@ -196,9 +210,9 @@ end
 ####################
 
 function update!(scan::LinearScan)
-    scan.scan.x = (ones(length(scan.z_axis))' .* scan.x_axis)[:];
+    scan.scan.x = (ones(length(scan.z_axis)) .* scan.x_axis')[:];
     scan.scan.y = zeros(length(scan.x_axis) * length(scan.z_axis))
-    scan.scan.z = (ones(length(scan.x_axis)) .* scan.z_axis')[:];
+    scan.scan.z = (ones(length(scan.x_axis))' .* scan.z_axis)[:];
 end
 
 function update!(scan::SectorScan)

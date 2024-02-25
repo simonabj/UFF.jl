@@ -39,16 +39,18 @@ end
     - `location::String`: Location of scan object in HDF5 file
     - `verbose::Bool`: Print verbose output
 """
-function read_scan(fid, location, verbose)
+function read_scan(fid, location; verbose = false)
     # We need to determine the type of scan, and then request
     # the appropriate data from the HDF5 file corresponding to that scan type.
     scan_type = match(r"uff\.(.*)", attrs(fid[location])["class"])[1]
 
+    
     base_scan = Scan()
+    
     base_scan.x = read_col_vector(fid["$location/x"])
     base_scan.y = read_col_vector(fid["$location/y"])
     base_scan.z = read_col_vector(fid["$location/z"])
-
+    
     if scan_type == "scan"
         return base_scan
     end
@@ -60,7 +62,7 @@ function read_scan(fid, location, verbose)
            scan_type == "linear_3d_scan" ? Linear3DScan() :
            error("Scan type $scan_type not supported.")
 
-    scan.scan = base_scan
+    setfield!(scan, :scan, base_scan)
 
     for field_name in fieldnames(typeof(scan))
         if field_name == :scan
@@ -69,26 +71,29 @@ function read_scan(fid, location, verbose)
 
         # setproperty! will try to convert the data to the correct type
         try
-            setproperty!(scan, field_name, read_data(fid["$location/$field_name"]))
+            setfield!(scan, field_name, convert(fieldtype(typeof(scan), field_name), read_data(fid["$location/$field_name"])))
         catch e
             # This is a special case for sector scans in v1.2.0
             sector_scan_fix = field_name == :origin && scan_type == "sector_scan" && e isa KeyError
+
+            # There was another error than the origin<->apex error
             if !sector_scan_fix
                 rethrow(e)
             end
 
-            apex = _read_location(fid, "$location/apex", verbose)
+            # Fix for apex -> origin
+            apex = _read_location(fid, "$location/apex"; verbose)
             if apex isa Point
                 apex = [apex]
             end
-            setproperty!(scan, :origin, apex)
+            setfield!(scan, :origin, apex)
         end
     end
 
     return scan
 end
 
-function read_array(fid, location, verbose)
+function read_array(fid, location; verbose = false)
 
     array_type = match(r"uff\.(.*)", attrs(fid[location])["class"])[1]
 
@@ -130,13 +135,13 @@ function read_cell(fid, location)
         if verbose
             println("$location/$items[i]")
         end
-        header_data[i] = _read_location(fid, joinpath(location, items[i]), verbose)
+        header_data[i] = _read_location(fid, joinpath(location, items[i]); verbose)
     end
 
     return header_data
 end
 
-function _read_location(fid, location, verbose)
+function _read_location(fid, location; verbose = false)
     data_name = nothing
     class_name = nothing
 
@@ -163,12 +168,16 @@ function _read_location(fid, location, verbose)
         return read_cell(fid, location)
 
     elseif endswith(class_name, "scan")
-        println("Reading scan!")
-        return read_scan(fid, location, verbose)
+        if verbose
+            println("Reading scan!")
+        end
+        return read_scan(fid, location; verbose)
 
     elseif endswith(class_name, "array")
-        println("Reading array!")
-        return read_array(fid, location, verbose)
+        if verbose
+            println("Reading array!")
+        end
+        return read_array(fid, location; verbose)
 
     end
 
@@ -196,7 +205,7 @@ function _read_location(fid, location, verbose)
             out = Vector{eval(Meta.parse(sym_name))}(undef, N)
 
             for i in 1:N
-                out[i] = _read_location(fid, joinpath(location, items[i]), verbose)
+                out[i] = _read_location(fid, joinpath(location, items[i]); verbose)
             end
 
             if verbose
@@ -236,7 +245,7 @@ function _read_location(fid, location, verbose)
                 # This will definitely break...
                 if Symbol(prop) in fieldnames(UFFHeader)
                     # Since the header is a collection of multiple unpacked vales, we must dispatch into the header object
-                    setfield!(uff_obj.header, Meta.parse(prop), _read_location(fid, prop_location, verbose))
+                    setfield!(uff_obj.header, Meta.parse(prop), _read_location(fid, prop_location; verbose))
                 else
                     # PS: This is way too deep. Should probably refactor this with guard clauses or something.
 
@@ -250,7 +259,7 @@ function _read_location(fid, location, verbose)
                     end
 
                     prop_field_type = fieldtype(typeof(uff_obj), prop_symbol)
-                    data = _read_location(fid, prop_location, verbose)
+                    data = _read_location(fid, prop_location; verbose)
                     if prop_field_type <: Integer
                         data = trunc(prop_field_type, data)
                     end
@@ -273,13 +282,13 @@ function _read_location(fid, location, verbose)
             return uff_obj
         end
     else
-        prinln("Unsupported class $class_name")
+        error("Unsupported class $class_name")
         return nothing
     end
 end
 
 
-function read_object(filename, location="/", verbose=true)
+function read_object(filename, location="/"; verbose=false)
 
     flag_v10x = false
     flag_v11x = false
@@ -292,7 +301,10 @@ function read_object(filename, location="/", verbose=true)
     fid = h5open(filename, "r")
 
     file_version = attrs(fid)["version"][1]
-    println("File version = $file_version")
+
+    if verbose
+        println("File version = $file_version")
+    end
 
     if !isnothing(match(r"v1\.2\.\d+", file_version))
         # Current version
@@ -314,6 +326,9 @@ function read_object(filename, location="/", verbose=true)
         error("Batch reading not supported yet. Please specify a location.")
     end
 
-    _read_location(fid, location, verbose)
+    result = _read_location(fid, location; verbose)
 
+    close(fid)
+
+    return result
 end
