@@ -91,3 +91,8 @@ object.
 ### What could be done?
 - Use more generic functions to read the UFF fileformat
 - Do not rely on metaprogramming to interpret the data as classes
+
+### Misc
+- Why is there a reference to probe in the Wave struct when there is a probe defined in the compulsory apodization applied to the wave?
+    - Yes, it is not guaranteed that the probe in the apodization is an aperture apodization, which means the probe is not set in the apodization, but the apodization given to the Wave struct is must be a aperture apodization, no?
+
