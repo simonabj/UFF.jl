@@ -20,9 +20,8 @@ export ApertureApodization, compute
     apodization_vector::Matrix{Float32} = Matrix{Float32}(undef, 0, 0)
 end
 
-
 Base.propertynames(::ApertureApodization, private::Bool=false) = union(
-    fieldnames(ApertureApodization), [:N_elements]
+    fieldnames(ApertureApodization), [:N]
 )
 
 ## Simple getproperty/setproperty! implementation
@@ -31,7 +30,7 @@ function Base.getproperty(a::ApertureApodization, s::Symbol)
     if s in fieldnames(ApertureApodization)
         getfield(a, s)
 
-    elseif s == :N_elements
+    elseif s == :N
         return length(a.probe)
     end
 end
@@ -40,8 +39,8 @@ function Base.setproperty!(a::ApertureApodization, s::Symbol, v)
     if s in fieldnames(ApertureApodization)
         setfield!(a, s, convert(fieldtype(ApertureApodization, s), v))
 
-    elseif s == :N_elements
-        error("Cannot set N_elements")
+    elseif s == :N
+        error("Cannot set N")
     end
 end
 
