@@ -94,5 +94,6 @@ object.
 
 ### Misc
 - Why is there a reference to probe in the Wave struct when there is a probe defined in the compulsory apodization applied to the wave?
-    - Yes, it is not guaranteed that the probe in the apodization is an aperture apodization, which means the probe is not set in the apodization, but the apodization given to the Wave struct is must be a aperture apodization, no?
-
+    - Yes, it is not guaranteed that the probe in the apodization is an aperture apodization, which means the probe is not set in the apodization, but the apodization given to the Wave struct must be a aperture apodization, no?
+- Adding on to point above, there are many references to a lot of different structs thrown about all over the place in the UFF struct. This is resource wasteful. Should we make this more modular and only have references to the structs that are actually used in the UFF struct?
+    - A quick thought is that not everything should hold a reference to everything. Example, say we need a transmit apodization. What is important to store in the transmit apodization struct, and what can be passed as potential parameters? We do not need store the `focus` as it is used to define the entire beamforming area. The sequence can make sence, but that aswell is better defined in the overarching channel_data struct.

@@ -1,3 +1,7 @@
+import ControlSystems: blockdiag
+import SparseArrays: sparse
+import DSP: filtfilt
+
 export WaveApodization
 
 @kwdef mutable struct WaveApodization
@@ -66,13 +70,17 @@ function compute(apod::WaveApodization)
     elseif apod.window == Window.Scanline
         # If linear scan
         if apod.focus isa Scan || apod.focus isa LinearScan
-            # Do some magic. 
-            # TODO: Implement this
+            # Get sequence block matrix
+            cells = blockdiag([sparse(ones(apod.MLA, 1)) for _ in 1:N_waves]...)
+            # Filter block with MA filter with length of MLA_overlap
+            block = filtfilt(ones(apod.MLA_overlap + 1) / (apod.MLA_overlap + 1), [1.0], cells)
+
+            return kron(block, ones(apod.focus.N_z_axis, 1))
         elseif apod.focus isa SectorScan
             # Do some more magic.
             # TODO: Implement this
         else
-            
+            error("The scan type $(typeof(apod.focus)) is not supported for scanline apodization")
         end
     end
 end

@@ -249,6 +249,11 @@ function _read_location(fid, location; verbose = false)
                 else
                     # PS: This is way too deep. Should probably refactor this with guard clauses or something.
 
+                    if sym_name == "ApertureApodization" && startswith(prop, "MLA")
+                        # Skip MLA properties for aperture apodization
+                        continue
+                    end
+
                     prop_symbol = Meta.parse(prop)
 
                     # Property symbol translation for differences between Matlab and Julia implementation
