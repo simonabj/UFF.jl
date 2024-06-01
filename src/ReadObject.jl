@@ -244,7 +244,7 @@ function _read_location(fid, location; verbose = false)
 
                 # This will definitely break...
                 if Symbol(prop) in fieldnames(UFFHeader)
-                    # Since the header is a collection of multiple unpacked vales, we must dispatch into the header object
+                    # Since the header is a collection of multiple unpacked values, we must dispatch into the header object
                     setfield!(uff_obj.header, Meta.parse(prop), _read_location(fid, prop_location; verbose))
                 else
                     # PS: This is way too deep. Should probably refactor this with guard clauses or something.
@@ -254,6 +254,7 @@ function _read_location(fid, location; verbose = false)
                         continue
                     end
 
+                    # Meta.parse is a really unsafe method.
                     prop_symbol = Meta.parse(prop)
 
                     # Property symbol translation for differences between Matlab and Julia implementation
@@ -273,6 +274,11 @@ function _read_location(fid, location; verbose = false)
                     if prop_symbol in [:f_number, :tilt, :maximum_aperture, :minimum_aperture]
                         data = vec(data)
                     elseif isa(uff_obj, Scan)
+                        data = [data]
+                    end
+
+                    # Matlab converts arrays with a single element to a scalar. We need to convert it back to an array.
+                    if prop_symbol == :sequence && data isa Wave
                         data = [data]
                     end
 
